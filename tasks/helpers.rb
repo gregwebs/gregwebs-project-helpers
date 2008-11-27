@@ -14,8 +14,7 @@ end
 
 # this is like backticks, but the command will be shell escaped
 def run *command
-  command = command.flatten.map {|str| str.split(/\s+/)}.flatten
-  res = IO.popen('-') {|io| io ? io.read : exec(command.shift, *command)}
+  res = run_shell_escaped *command
   return <<-EOS if $?.exitstatus != 0
 
 exit code: #{$?.exitstatus}
@@ -29,8 +28,15 @@ EOS
   res
 end
 
-def out command
-  (puts (run! command))
+def run_shell_escaped *command
+  command = command.flatten.map do |str|
+    str =~/^'.*'$/ ? str : str.split(/\s+/)
+  end.flatten
+  res = IO.popen('-') {|io| io ? io.read : exec(command.shift, *command)}
+end
+
+def out *command
+  (puts (run! *command))
 end
 
 def cd_tmp
